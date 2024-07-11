@@ -37,7 +37,7 @@ async function startEc2Instance(label, githubRegistrationToken) {
 
   const userData = buildUserDataScript(githubRegistrationToken, label);
 
-  const params = {
+  const params = Object.assign({
     ImageId: config.input.ec2ImageId,
     InstanceType: config.input.ec2InstanceType,
     MinCount: 1,
@@ -47,7 +47,16 @@ async function startEc2Instance(label, githubRegistrationToken) {
     SecurityGroupIds: [config.input.securityGroupId],
     IamInstanceProfile: { Name: config.input.iamRoleName },
     TagSpecifications: config.tagSpecifications,
-  };
+  },
+    config.input.imdsv1 != null ?
+    {
+      MetadataOptions: {
+        HttpTokens: 'optional', // IMDSv1 enabled
+        HttpPutResponseHopLimit: 1,
+        HttpEndpoint: 'enabled'
+      }
+    } : {}
+  );
 
   try {
     const result = await ec2.runInstances(params).promise();
